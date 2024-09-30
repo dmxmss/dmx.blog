@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>dmx.blog</title>
+  </head>
+
+  <body>
+    {% for article in articles %}
+      <h1>{{ article.name }}</h1>
+    {% endfor %}
+  </body>
+</html>
