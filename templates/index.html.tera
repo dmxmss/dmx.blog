@@ -8,6 +8,7 @@
   <body>
     {% for article in articles %}
       <h1>{{ article.name }}</h1>
+      <p>publication date: {{ article.pub_date }}</p>
     {% endfor %}
   </body>
 </html>
