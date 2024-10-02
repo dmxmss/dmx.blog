@@ -5,10 +5,16 @@
     <title>dmx.blog</title>
   </head>
 
+  <style>
+    .date {
+      opacity: 0.2;
+    }    
+
+  </style>
+
   <body>
     {% for article in articles %}
-      <h1>{{ article.name }}</h1>
-      <p>publication date: {{ article.pub_date }}</p>
+      <p><a href=/article/{{article.id}}>{{ article.name }}</a> <span class="date">{{ article.pub_date }}</span></p>
     {% endfor %}
   </body>
 </html>

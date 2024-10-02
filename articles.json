@@ -3,23 +3,31 @@
     "id": 1,
     "name": "My first article",
     "contents": "Hello world!",
-    "pub_date": "2024-09-30T20:00:00.000Z",
-    "edit_date": "2024-09-30T20:00:00.000Z"
+    "pub_date": "2024-09-30 20:00",
+    "edit_date": "2024-09-30 20:00"
   },
 
   {
     "id": 2,
     "name": "My second article",
     "contents": "Hello world?",
-    "pub_date": "2024-10-01T20:00:00.000Z",
-    "edit_date": "2024-10-01T20:00:00.000Z"
+    "pub_date": "2024-10-01 20:00",
+    "edit_date": "2024-10-01 20:00"
   },
 
   {
     "id": 3,
     "name": "My third article",
     "contents": "How do you do?",
-    "pub_date": "2024-10-02T20:00:00.000Z",
-    "edit_date": "2024-10-02T20:00:00.000Z"
+    "pub_date": "2024-10-02 20:00",
+    "edit_date": "2024-10-02 20:00"
+  },
+
+  {
+    "id": 4,
+    "name": "It is boring to manually create articles in articles.json",
+    "contents": "I need a handler of post request to create an article",
+    "pub_date": "2024-10-02 11:25",
+    "edit_date": "2024-10-02 11:25"
   }
 ]

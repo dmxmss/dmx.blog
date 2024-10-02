@@ -3,11 +3,11 @@
 use rocket_dyn_templates::Template;
 
 mod lib;
-use lib::handlers::index;
+use lib::handlers::{index, article};
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index])
+        .mount("/", routes![index, article])
         .attach(Template::fairing())
 }

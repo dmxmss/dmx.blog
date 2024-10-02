@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Article</title>
+  </head>
+
+  <style>
+    .date {
+      font-size: 14px;
+      opacity: 0.3;
+    }
+  </style>
+
+  <body>
+    <h1><b>{{ article.name }}</b></h1>
+    <p class="date"><i>Publication date: {{ article.pub_date }}</i></p>
+    <p class="date"><i>Edit date: {{ article.edit_date }}</i></p>
+
+    <p>{{ article.contents }}</p>
+  </body>
+</html>
