@@ -1,4 +1,5 @@
 use rocket_dyn_templates::{Template, context};
+use rocket::fs::NamedFile;
 use crate::lib::utils::get_articles;
 
 #[get("/")]
@@ -16,4 +17,9 @@ pub fn article(id: u64) -> Option<Template> {
     } else {
         None
     }
+}
+
+#[get("/new")]
+pub async fn new_article_form() -> Option<NamedFile> {
+    NamedFile::open("static/new_article.html").await.ok()
 }

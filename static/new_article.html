@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Create new article</title>
+  </head>
+
+  <style>
+    .new {
+      display: flex;
+      flex-direction: column;
+    } 
+
+    .input {
+      width: 300px;
+      margin: 5px auto;
+      padding: 15px 10px;
+    }
+    
+    .title {
+      font-size: 70px; 
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+  </style>
+  <div class="wrap">
+    <span class="title">New article</span>
+    <form class="new" method="post" action="/new">
+      <input class="input" placeholder="title">
+      <textarea class="input" placeholder="contents"></textarea>
+    </form>
+  </div>
+</html>
