@@ -6,7 +6,7 @@
   </head>
 
   <style>
-    .new {
+    .admin {
       display: flex;
       flex-direction: column;
       margin: auto;
@@ -52,11 +52,10 @@
     }
   </style>
   <div class="wrap">
-    <span class="title">New article</span>
-    <form class="new" method="post" action="/new">
-      <input class="input" placeholder="title" required>
-      <textarea class="input" placeholder="contents" required></textarea>
-      <input class="submit" type="submit" value="create new article">
+    <h1 class="title">Enter admin password</h1>
+    <form class="admin" method="post" action="/login">
+      <input name="password" class="input" placeholder="enter password" type="password" required>
+      <input class="submit" type="submit" value="login">
     </form>
   </div>
 </html>

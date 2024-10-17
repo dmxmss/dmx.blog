@@ -8,6 +8,6 @@ use lib::handlers::*;
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, article, new_article_form])
+        .mount("/", routes![index, article, get_new_article_form, get_admin_login_form, admin_page, login])
         .attach(Template::fairing())
 }
