@@ -45,7 +45,7 @@ pub fn generate_tokens(iat: i64) -> (String, String) {
     let secret = fs::read_to_string("server_secret").unwrap();
     let now = chrono::Utc::now().timestamp();
 
-    let access_exp = 1 + now; // 24h 
+    let access_exp = 24*60*60 + now; // 24h 
     let refresh_exp = 7*24*60*60 + now; // 7d 
 
     let access = encode(&Header::default(), &Claims {exp: access_exp, iat}, &EncodingKey::from_secret(secret.as_ref())).unwrap();

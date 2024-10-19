@@ -34,8 +34,8 @@ pub async fn get_new_article_form() -> Option<NamedFile> {
 }
 
 #[get("/login")]
-pub async fn get_admin_login_form() -> Option<NamedFile> {
-    NamedFile::open("static/login.html").await.ok()
+pub async fn get_admin_login_form() -> Template {
+    Template::render("login", context! { wrong_pass: false })
 }
 
 
@@ -54,4 +54,14 @@ pub async fn admin_page(_admin: Admin) -> Template {
     let articles = get_articles("articles.json");
 
     Template::render("index", context! { articles: articles })
+}
+
+#[catch(401)]
+pub fn unauthorized() -> Redirect {
+    Redirect::to(uri!("/login"))
+}
+
+#[catch(422)]
+pub fn wrong_password() -> Template {
+    Template::render("login", context! { wrong_pass: true })
 }

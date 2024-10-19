@@ -58,4 +58,10 @@
       <input class="submit" type="submit" value="login">
     </form>
   </div>
+
+  {% if wrong_pass %}
+  <script>
+    window.alert("Wrong password");
+  </script>
+  {% endif %}
 </html>
