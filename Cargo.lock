@@ -429,11 +429,13 @@ name = "dmxdotblog"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "cookie",
  "jsonwebtoken",
  "rocket",
  "rocket_dyn_templates",
  "serde",
  "serde_json",
+ "time",
 ]
 
 [[package]]

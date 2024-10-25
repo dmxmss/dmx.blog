@@ -1,10 +1,9 @@
-use crate::lib::utils::{generate_tokens, Claims};
+use crate::lib::utils::{set_new_tokens, Claims};
 use rocket::{
     request::{Outcome, Request, FromRequest},
-    http::{Status, Cookie}
+    http::Status
 };
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm, errors::{Error, ErrorKind}};
-use chrono::offset::Utc;
+use jsonwebtoken::{decode, errors::{Error, ErrorKind}, Algorithm, DecodingKey, Validation};
 
 pub struct Admin;
 
@@ -26,16 +25,7 @@ impl<'r> FromRequest<'r> for Admin {
             // refresh token is present in cookies
             match decode::<Claims>(refresh_token.value(), &DecodingKey::from_secret(secret.as_ref()), &Validation::new(Algorithm::HS256)) {
                 Ok(_) => {
-
-                    let (new_access, new_refresh) = generate_tokens(Utc::now().timestamp());
-
-                    let refresh = Cookie::new("RefreshToken", new_refresh);
-                    let access = Cookie::new("AccessToken", new_access);
-
-                    cookies.remove_private(refresh_token);
-
-                    cookies.add_private(refresh);
-                    cookies.add_private(access);
+                    set_new_tokens(cookies);
 
                     Outcome::Success(Admin)
                 },

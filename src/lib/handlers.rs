@@ -1,15 +1,14 @@
 use rocket_dyn_templates::{Template, context};
 use rocket::{
-    fs::NamedFile,
-    form::Form,
-    response::Redirect,
-    http::CookieJar
+    form::Form, 
+    fs::NamedFile, 
+    http::CookieJar, 
+    response::Redirect
 };
 use crate::lib::{
-    utils::{generate_tokens, get_articles, LoginData},
+    utils::{set_new_tokens, get_articles, LoginData},
     admin::Admin
 };
-use chrono::Utc;
 
 #[get("/")]
 pub fn index() -> Template {
@@ -38,14 +37,9 @@ pub async fn get_admin_login_form() -> Template {
     Template::render("login", context! { wrong_pass: false })
 }
 
-
 #[post("/login", data = "<_data>")]
 pub async fn login(jar: &CookieJar<'_>, _data: Form<LoginData>) -> Redirect {
-    let (access, refresh) = generate_tokens(Utc::now().timestamp_millis());
-
-    jar.add_private(("RefreshToken", refresh));
-    jar.add_private(("AccessToken", access));
-
+    set_new_tokens(jar);
     Redirect::to(uri!("/admin")) 
 }
 
