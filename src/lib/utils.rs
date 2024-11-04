@@ -1,4 +1,8 @@
-use crate::lib::article::Article;
+use crate::lib::{
+    article::Article,
+    errors::AppError,
+    tokens::{Token, AccessToken, RefreshToken}
+};
 use serde::{Serialize, Deserialize};
 use rocket::{
     form::{self, Error},
@@ -9,25 +13,18 @@ use std::{
     fs::{self, File},
     io::BufReader
 };
-use jsonwebtoken::{
-    self,
-    encode,
-    EncodingKey,
-    Header
-};
 use cookie::Cookie;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
-    pub exp: i64,
-    pub iat: i64,
+    pub exp: i64
 }
 
 #[derive(FromForm)]
 #[allow(dead_code)]
 pub struct LoginData {
-    #[field(validate = authenticate())]
+    #[field(validate = check_pass())]
     pub password: String
 }
 
@@ -38,7 +35,7 @@ pub fn get_articles<P: AsRef<Path>>(path: P) -> Vec<Article> {
     serde_json::from_reader(reader).unwrap()
 }
 
-fn authenticate<'v>(password: &str) -> form::Result<'v, ()> {
+fn check_pass<'v>(password: &str) -> form::Result<'v, ()> {
     if password.trim() != fs::read_to_string("admin").unwrap().trim() {
         Err(Error::validation("invalid admin password"))?;
     }
@@ -46,46 +43,57 @@ fn authenticate<'v>(password: &str) -> form::Result<'v, ()> {
     Ok(())
 }
 
-fn generate_tokens(iat: i64) -> (String, String) {
-    let secret = fs::read_to_string("server_secret").unwrap();
+fn generate_expires_timestamps() -> (OffsetDateTime, OffsetDateTime) {
+    let access_exp = OffsetDateTime::from_unix_timestamp(AccessToken::get_exp()).unwrap();
+    let refresh_exp = OffsetDateTime::from_unix_timestamp(RefreshToken::get_exp()).unwrap();
 
-    let access_exp: OffsetDateTime = OffsetDateTime::from_unix_timestamp(iat).unwrap() + Duration::SECOND*24*60*60; // 24h
-    let refresh_exp: OffsetDateTime = OffsetDateTime::from_unix_timestamp(iat).unwrap() + Duration::SECOND*7*24*60*60; // 7d
-
-
-    let access = encode(&Header::default(), &Claims {exp: access_exp.unix_timestamp(), iat}, &EncodingKey::from_secret(secret.as_ref())).unwrap();
-    let refresh = encode(&Header::default(), &Claims {exp: refresh_exp.unix_timestamp(), iat}, &EncodingKey::from_secret(secret.as_ref())).unwrap();
-
-    (access, refresh)
+    (access_exp, refresh_exp)
 }
 
-fn generate_token_cookies<'c>() -> (Cookie<'c>, Cookie<'c>) {
-    let now = OffsetDateTime::now_utc();
-    let (new_access, new_refresh) = generate_tokens(now.unix_timestamp());
+fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -> Result<(Cookie<'c>, Cookie<'c>), AppError> {
+    let (access_exp, refresh_exp) = generate_expires_timestamps();
 
-    let access_exp: OffsetDateTime = now + Duration::SECOND*24*60*60; // 24h
-    let refresh_exp = now + Duration::SECOND*7*24*60*60; // 7d
-
-    let access_cookie = Cookie::build(("AccessToken", new_access))
+    let access_cookie = Cookie::build((AccessToken::COOKIE_NAME, encoded_access))
         .path("/admin")
         .secure(true)
         .expires(access_exp)
         .http_only(true)
         .build();
 
-    let refresh_cookie = Cookie::build(("RefreshToken", new_refresh))
+    let refresh_cookie = Cookie::build((RefreshToken::COOKIE_NAME, encoded_refresh))
         .path("/admin")
         .secure(true)
         .expires(refresh_exp)
         .http_only(true)
         .build();
 
-    (refresh_cookie, access_cookie)
+    Ok((refresh_cookie, access_cookie))
 }
 
-pub fn set_new_tokens(jar: &CookieJar<'_>) {
-    let (refresh_cookie, access_cookie) = generate_token_cookies();
+pub fn get_secret() -> String {
+    std::fs::read_to_string("server_secret").unwrap()
+}
 
-    jar.add_private(refresh_cookie);
-    jar.add_private(access_cookie);
+pub fn generate_tokens() -> Result<(String, String), AppError> {
+    let secret = get_secret();
+
+    let access = AccessToken::encode(&secret)?;
+    let refresh = RefreshToken::encode(&secret)?;
+
+    Ok((access, refresh))
+}
+
+pub fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies: &CookieJar) -> Result<(), AppError> {
+    let (access_cookie, refresh_cookie) = generate_token_cookies(access_token, refresh_token)?;
+
+    cookies.add_private(access_cookie);
+    cookies.add_private(refresh_cookie);
+
+    Ok(())
+}
+
+pub fn update_tokens(cookies: &CookieJar) -> Result<(), AppError> {
+    let (access_token, refresh_token) = generate_tokens()?;
+
+    write_tokens_to_cookies(access_token, refresh_token, cookies)
 }
