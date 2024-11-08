@@ -17,7 +17,10 @@ impl<'r> FromRequest<'r> for Refresh {
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let cookies = req.cookies();
-        let secret = get_secret();
+        let secret = match get_secret() {
+            Ok(s) => s,
+            Err(e) => return e.into()
+        };
 
         match cookies.get_private(RefreshToken::COOKIE_NAME) {
             Some(cookie) => {

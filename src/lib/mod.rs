@@ -5,3 +5,4 @@ pub mod admin;
 pub mod errors;
 pub mod tokens;
 pub mod refresh;
+pub mod result;

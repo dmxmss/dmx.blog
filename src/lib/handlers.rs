@@ -13,17 +13,21 @@ use crate::lib::{
 };
 
 #[get("/")]
-pub fn index() -> Template {
-    let articles = get_articles("articles.json");
+pub fn index() -> Result<Template, Status> {
+    let articles = get_articles("articles.json")?;
 
-    Template::render("index", context! { articles: articles })
+    Ok(Template::render("index", context! { articles: articles }))
 }
 
 #[get("/article/<id>")] 
-pub fn article(id: u64) -> Option<Template> {
-    let articles = get_articles("articles.json");
+pub fn article(id: u64) -> Result<Template, Status> {
+    let articles = get_articles("articles.json")?;
 
-    articles.into_iter().find(|article| article.id == id).map(|article| Template::render("article", context! { article: article }))
+    articles
+        .into_iter()
+        .find(|article| article.id == id)
+        .map(|article| Template::render("article", context! { article: article }))
+        .ok_or(Status::NotFound)
 }
 
 #[get("/new")]
@@ -32,9 +36,10 @@ pub async fn article_form(_admin: Admin) -> Option<NamedFile> {
 }
 
 #[post("/new", data = "<article>")]
-pub fn new_article(_admin: Admin, article: Form<NewArticle>) -> Redirect {
-    let id = create_article("articles.json", article.into_inner()); // Add error handling
-    Redirect::to(uri!(article(id)))
+pub fn new_article(_admin: Admin, article: Form<NewArticle>) -> Result<Redirect, Status> {
+    let id = create_article("articles.json", article.into_inner())?;
+
+    Ok(Redirect::to(uri!(article(id))))
 }
 
 #[get("/login")]
@@ -43,19 +48,17 @@ pub async fn login_form() -> Template {
 }
 
 #[post("/login", data = "<_data>")]
-pub async fn login(jar: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Redirect, Status> {
-    if update_tokens(jar).is_err() {
-        return Err(Status::InternalServerError);
-    }
+pub async fn login(cookies: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Redirect, Status> {
+    update_tokens(cookies)?;
 
     Ok(Redirect::to(uri!("/admin")))
 }
 
 #[get("/admin")]
-pub async fn admin(_admin: Admin) -> Template {
-    let articles = get_articles("articles.json");
+pub async fn admin(_admin: Admin) -> Result<Template, Status> {
+    let articles = get_articles("articles.json")?;
 
-    Template::render("dashboard", context! { articles: articles })
+    Ok(Template::render("dashboard", context! { articles: articles }))
 }
 
 #[get("/admin", rank = 2)]

@@ -10,10 +10,13 @@ pub trait Token {
     const COOKIE_NAME: &'static str;
 
     fn validate(token: &str, secret: &str) -> Result<(), AppError> {
-        match decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &Validation::new(Algorithm::HS256)) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(AppError::TokenValidationError(e))
-        }
+        decode::<Claims>(
+            token, 
+            &DecodingKey::from_secret(secret.as_ref()), 
+            &Validation::new(Algorithm::HS256)
+        )?;
+
+        Ok(())
     }
 
     fn encode(secret: &str) -> Result<String, AppError> {
@@ -22,10 +25,13 @@ pub trait Token {
             exp 
         };
 
-        match encode(&jsonwebtoken::Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref())) {
-            Ok(token) => Ok(token),
-            Err(e) => Err(AppError::TokenEncodingError(e))
-        }
+        Ok(
+            encode(
+                &jsonwebtoken::Header::default(),
+                &claims, 
+                &EncodingKey::from_secret(secret.as_ref())
+            )?
+        )
     }
 
     fn get_exp() -> i64 {

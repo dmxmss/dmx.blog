@@ -1,12 +1,12 @@
 use crate::lib::{
     article::{Article, NewArticle},
-    errors::AppError,
-    tokens::{Token, AccessToken, RefreshToken}
+    tokens::{Token, AccessToken, RefreshToken},
+    result::Result
 };
 use serde::{Serialize, Deserialize};
 use rocket::{
-    form::{self, Error},
-    http::CookieJar
+    form,
+    http::{Status, CookieJar}
 };
 use std::{
     fs::{self, File}, io::{BufReader, Write}, path::Path
@@ -26,20 +26,16 @@ pub struct LoginData {
     pub password: String
 }
 
-pub fn get_articles<P: AsRef<Path>>(path: P) -> Vec<Article> {
-    let file = File::open(path).unwrap();
+pub fn get_articles<P: AsRef<Path>>(path: P) -> Result<Vec<Article>> {
+    let file = File::open(path)?;
     let reader = BufReader::new(file);
 
-    serde_json::from_reader(reader).unwrap()
+    Ok(serde_json::from_reader(reader)?)
 }
 
-pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> u64 {
-    let file = File::open(&path).unwrap();
-    let reader = BufReader::new(&file);
-
-    let mut articles: Vec<Article> = serde_json::from_reader(reader).unwrap();
-
-    let mut file = File::create(&path).unwrap();
+pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> Result<u64> {
+    let mut file = File::open(&path)?;
+    let mut articles = get_articles(&path)?;
 
     let id = articles.iter().map(|a| a.id).max().unwrap() + 1;
     let article = Article::new(id, article.name, article.contents);
@@ -47,25 +43,30 @@ pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> u64 {
 
     file.write_all(serde_json::to_string(&articles).unwrap().as_bytes()).unwrap();
 
-    id
+    Ok(id)
 }
 
-fn check_pass<'v>(password: &str) -> form::Result<'v, ()> {
-    if password.trim() != fs::read_to_string("admin").unwrap().trim() {
-        Err(Error::validation("invalid admin password"))?;
+fn check_pass<'v>(input_pass: &str) -> form::Result<'v, ()> {
+    let pass = match fs::read_to_string("admin") {
+        Ok(p) => p,
+        Err(e) => return Err(form::error::ErrorKind::Custom(Status::InternalServerError, Box::new(e)).into())
+    };
+    
+    if input_pass.trim() != pass.trim() {
+        Err(form::Error::validation("invalid admin password"))?;
     }
 
     Ok(())
 }
 
 fn generate_expires_timestamps() -> (OffsetDateTime, OffsetDateTime) {
-    let access_exp = OffsetDateTime::from_unix_timestamp(AccessToken::get_exp()).unwrap();
+    let access_exp = OffsetDateTime::from_unix_timestamp(AccessToken::get_exp()).unwrap(); // I assume this operation never fails
     let refresh_exp = OffsetDateTime::from_unix_timestamp(RefreshToken::get_exp()).unwrap();
 
     (access_exp, refresh_exp)
 }
 
-fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -> Result<(Cookie<'c>, Cookie<'c>), AppError> {
+fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -> (Cookie<'c>, Cookie<'c>) {
     let (access_exp, refresh_exp) = generate_expires_timestamps();
 
     let access_cookie = Cookie::build((AccessToken::COOKIE_NAME, encoded_access))
@@ -82,15 +83,15 @@ fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -
         .http_only(true)
         .build();
 
-    Ok((refresh_cookie, access_cookie))
+    (refresh_cookie, access_cookie)
 }
 
-pub fn get_secret() -> String {
-    std::fs::read_to_string("server_secret").unwrap()
+pub fn get_secret() -> Result<String> {
+    Ok(std::fs::read_to_string("server_secret")?)
 }
 
-pub fn generate_tokens() -> Result<(String, String), AppError> {
-    let secret = get_secret();
+pub fn generate_tokens() -> Result<(String, String)> {
+    let secret = get_secret()?;
 
     let access = AccessToken::encode(&secret)?;
     let refresh = RefreshToken::encode(&secret)?;
@@ -98,17 +99,17 @@ pub fn generate_tokens() -> Result<(String, String), AppError> {
     Ok((access, refresh))
 }
 
-pub fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies: &CookieJar) -> Result<(), AppError> {
-    let (access_cookie, refresh_cookie) = generate_token_cookies(access_token, refresh_token)?;
+pub fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies: &CookieJar) {
+    let (access_cookie, refresh_cookie) = generate_token_cookies(access_token, refresh_token);
 
     cookies.add_private(access_cookie);
     cookies.add_private(refresh_cookie);
-
-    Ok(())
 }
 
-pub fn update_tokens(cookies: &CookieJar) -> Result<(), AppError> {
+pub fn update_tokens(cookies: &CookieJar) -> Result<()> {
     let (access_token, refresh_token) = generate_tokens()?;
 
-    write_tokens_to_cookies(access_token, refresh_token, cookies)
+    write_tokens_to_cookies(access_token, refresh_token, cookies);
+
+    Ok(())
 }
