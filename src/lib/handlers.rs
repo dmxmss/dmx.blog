@@ -4,12 +4,12 @@ use rocket::{
     fs::NamedFile, 
     http::{Status, CookieJar}, 
     response::Redirect,
-    Request
 };
 use crate::lib::{
-    utils::{update_tokens, get_articles, LoginData},
+    utils::{create_article, update_tokens, get_articles, LoginData},
     admin::Admin,
-    refresh::Refresh
+    refresh::Refresh,
+    article::NewArticle
 };
 
 #[get("/")]
@@ -27,61 +27,58 @@ pub fn article(id: u64) -> Option<Template> {
 }
 
 #[get("/new")]
-pub async fn get_new_article_form() -> Option<NamedFile> {
+pub async fn article_form(_admin: Admin) -> Option<NamedFile> {
     NamedFile::open("static/new_article.html").await.ok()
 }
 
+#[post("/new", data = "<article>")]
+pub fn new_article(_admin: Admin, article: Form<NewArticle>) -> Redirect {
+    let id = create_article("articles.json", article.into_inner()); // Add error handling
+    Redirect::to(uri!(article(id)))
+}
+
 #[get("/login")]
-pub async fn get_admin_login_form() -> Template {
+pub async fn login_form() -> Template {
     Template::render("login", context! { wrong_pass: false })
 }
 
 #[post("/login", data = "<_data>")]
-pub async fn login(jar: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Redirect, (Status, &'static str)> {
+pub async fn login(jar: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Redirect, Status> {
     if update_tokens(jar).is_err() {
-        return Err((Status::InternalServerError, "Internal server error"));
+        return Err(Status::InternalServerError);
     }
 
     Ok(Redirect::to(uri!("/admin")))
 }
 
 #[get("/admin")]
-pub async fn admin(admin: Option<Admin>) -> Result<Template, Redirect> {
-    if admin.is_none() {
-        return Err(Redirect::to(uri!("/refresh")));
-    }
-
+pub async fn admin(_admin: Admin) -> Template {
     let articles = get_articles("articles.json");
 
-    Ok(Template::render("index", context! { articles: articles }))
+    Template::render("dashboard", context! { articles: articles })
+}
+
+#[get("/admin", rank = 2)]
+pub fn not_admin() -> Redirect {
+    Redirect::to(uri!("/refresh"))
 }
 
 #[get("/refresh")]
-pub fn refresh(refresh: Option<Refresh>) -> Redirect {
-    if refresh.is_none() {
-        return Redirect::to(uri!("/login"));
-    }
-
+pub fn refresh(_refresh: Refresh) -> Redirect {
     Redirect::to(uri!("/admin"))
 }
 
-#[get("/admin", rank = 3)]
-pub fn admin_redirect() -> Redirect {
-    Redirect::to(uri!("/login"))
+#[get("/refresh", rank = 2)]
+pub fn fail_refresh() -> Redirect {
+    Redirect::to(uri!(login_form()))
 }
 
-
 #[catch(401)]
-pub fn unauthorized() -> Redirect {
-    Redirect::to(uri!("/login"))
+pub async fn unauthorized() -> Option<NamedFile> {
+    NamedFile::open("static/unauthorized.html").await.ok() 
 }
 
 #[catch(422)]
 pub fn wrong_password() -> Template {
     Template::render("login", context! { wrong_pass: true })
-}
-
-#[catch(500)]
-pub fn internal_server_error() -> Redirect {
-    Redirect::to(uri!("/login"))
 }

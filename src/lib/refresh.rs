@@ -25,14 +25,14 @@ impl<'r> FromRequest<'r> for Refresh {
                     Ok(()) => {
                         match update_tokens(cookies) {
                             Ok(()) => Outcome::Success(Refresh),
-                            Err(e) => Outcome::Error((Status::InternalServerError, e))
+                            Err(_) => Outcome::Forward(Status::InternalServerError)
                         }
                     },
-                    Err(e) => Outcome::Error((Status::Unauthorized, e))
+                    Err(_) => Outcome::Forward(Status::Unauthorized)
                 }
             }, 
             None => {
-                Outcome::Forward(Status::PermanentRedirect)
+                Outcome::Forward(Status::Unauthorized)
             }
         }
     }

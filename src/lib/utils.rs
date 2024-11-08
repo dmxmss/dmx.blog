@@ -1,5 +1,5 @@
 use crate::lib::{
-    article::Article,
+    article::{Article, NewArticle},
     errors::AppError,
     tokens::{Token, AccessToken, RefreshToken}
 };
@@ -9,9 +9,7 @@ use rocket::{
     http::CookieJar
 };
 use std::{
-    path::Path,
-    fs::{self, File},
-    io::BufReader
+    fs::{self, File}, io::{BufReader, Write}, path::Path
 };
 use cookie::Cookie;
 use time::OffsetDateTime;
@@ -33,6 +31,23 @@ pub fn get_articles<P: AsRef<Path>>(path: P) -> Vec<Article> {
     let reader = BufReader::new(file);
 
     serde_json::from_reader(reader).unwrap()
+}
+
+pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> u64 {
+    let file = File::open(&path).unwrap();
+    let reader = BufReader::new(&file);
+
+    let mut articles: Vec<Article> = serde_json::from_reader(reader).unwrap();
+
+    let mut file = File::create(&path).unwrap();
+
+    let id = articles.iter().map(|a| a.id).max().unwrap() + 1;
+    let article = Article::new(id, article.name, article.contents);
+    articles.push(article);
+
+    file.write_all(serde_json::to_string(&articles).unwrap().as_bytes()).unwrap();
+
+    id
 }
 
 fn check_pass<'v>(password: &str) -> form::Result<'v, ()> {
@@ -61,7 +76,7 @@ fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -
         .build();
 
     let refresh_cookie = Cookie::build((RefreshToken::COOKIE_NAME, encoded_refresh))
-        .path("/admin")
+        .path("/refresh")
         .secure(true)
         .expires(refresh_exp)
         .http_only(true)

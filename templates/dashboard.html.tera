@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>dmx.blog</title>
+  </head>
+
+  <style>
+    .date {
+      opacity: 0.2;
+    }    
+  </style>
+
+  <body>
+    {% for article in articles %}
+      <p><a href=/article/{{article.id}}>{{ article.name }}</a> <span class="date">{{ article.pub_date }}</span></p>
+    {% endfor %}
+  </body>
+</html>

@@ -8,8 +8,9 @@ use lib::handlers::*;
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .mount("/", routes![index, article, get_new_article_form, get_admin_login_form, admin, refresh, login])
-        .register("/", catchers![unauthorized, wrong_password])
-        .register("/login", catchers![internal_server_error])
+        .mount("/", routes![index, article, login_form, admin, not_admin, refresh, fail_refresh, login])
+        .mount("/admin", routes![article_form, new_article])
+        .register("/admin", catchers![unauthorized])
+        .register("/login", catchers![wrong_password])
         .attach(Template::fairing())
 }

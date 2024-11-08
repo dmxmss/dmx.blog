@@ -1,7 +1,7 @@
 use crate::lib::{
-    tokens::{Token, AccessToken, RefreshToken},
+    tokens::{Token, AccessToken},
     errors::AppError,
-    utils::{get_secret, update_tokens}
+    utils::get_secret
 };
 use rocket::{
     request::{Outcome, FromRequest},
@@ -24,10 +24,10 @@ impl<'r> FromRequest<'r> for Admin {
             Some(cookie) => {
                 match AccessToken::validate(cookie.value(), &secret) {
                     Ok(()) => Outcome::Success(Admin),
-                    Err(e) => Outcome::Error((Status::Unauthorized, e))
+                    Err(_) => Outcome::Forward(Status::Unauthorized)
                 }
             },
-            None => Outcome::Forward(Status::PermanentRedirect)
+            None => Outcome::Forward(Status::Unauthorized)
         }
     }
 }
