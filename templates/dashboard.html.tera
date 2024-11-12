@@ -6,14 +6,19 @@
   </head>
 
   <style>
-    .date {
+    a {
+      text-decoration: none;  
+    }
+
+    .gray {
+      color: black;
       opacity: 0.2;
-    }    
+    }
   </style>
 
   <body>
     {% for article in articles %}
-      <p><a href=/article/{{article.id}}>{{ article.name }}</a> <span class="date">{{ article.pub_date }}</span></p>
+    <p><a href=/article/{{article.id}}>{{ article.name }}</a> <span class="gray">{{ article.pub_date }}</span> <a class="gray" href="/admin/delete/{{ article.id }}">delete</a> <a class="gray" href="/admin/edit/{{ article.id }}">edit</a></p>
     {% endfor %}
   </body>
 </html>

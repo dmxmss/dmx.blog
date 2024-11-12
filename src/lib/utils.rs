@@ -33,17 +33,43 @@ pub fn get_articles<P: AsRef<Path>>(path: P) -> Result<Vec<Article>> {
     Ok(serde_json::from_reader(reader)?)
 }
 
+pub fn get_article<P: AsRef<Path>>(path: P, id: u64) -> Result<Option<Article>> {
+    let articles = get_articles(path)?;
+
+    Ok(articles.into_iter().find(|article| article.id == id))
+}
+
 pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> Result<u64> {
-    let mut file = File::open(&path)?;
     let mut articles = get_articles(&path)?;
 
     let id = articles.iter().map(|a| a.id).max().unwrap() + 1;
     let article = Article::new(id, article.name, article.contents);
     articles.push(article);
 
-    file.write_all(serde_json::to_string(&articles).unwrap().as_bytes()).unwrap();
+    write_to_db(&path, articles)?;
 
     Ok(id)
+}
+
+pub fn delete_article_by_id<P: AsRef<Path>>(path: P, id: u64) -> Result<()> {
+    let mut articles = get_articles(&path)?;
+
+    if let Some(article) = get_article(&path, id)? {
+        articles.retain(|a| a.id != article.id);
+    }
+
+    
+    write_to_db(&path, articles)?;
+
+    Ok(())
+}
+
+fn write_to_db<P: AsRef<Path>>(path: P, articles: Vec<Article>) -> Result<()> {
+    let mut file = File::create(&path)?;
+    
+    file.write_all(serde_json::to_string(&articles).unwrap().as_bytes()).unwrap();
+
+    Ok(())
 }
 
 fn check_pass<'v>(input_pass: &str) -> form::Result<'v, ()> {
