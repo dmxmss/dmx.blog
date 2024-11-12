@@ -62,7 +62,7 @@ impl<T> From<AppError> for Outcome<T, AppError>
     fn from(e: AppError) -> Self {
         match e {
             AppError::TokenValidationError(_) => Outcome::Error((Status::Unauthorized, e)),
-            AppError::InternalServerError(_) => Outcome::Error((Status::InternalServerError, e))
+            AppError::InternalServerError(_) => Outcome::Error((Status::InternalServerError, e)),
         }
     }
 }

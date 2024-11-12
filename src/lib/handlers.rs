@@ -6,7 +6,7 @@ use rocket::{
     response::Redirect,
 };
 use crate::lib::{
-    utils::{delete_article_by_id, get_article, create_article, update_tokens, get_articles, LoginData},
+    utils::{update_article, delete_article_by_id, get_article, create_article, update_tokens, get_articles, LoginData},
     admin::Admin,
     refresh::Refresh,
     article::NewArticle
@@ -39,15 +39,24 @@ pub fn new_article(_admin: Admin, article: Form<NewArticle>) -> Result<Redirect,
 }
 
 #[get("/delete/<id>")]
-pub fn delete_article(id: u64) -> Result<Redirect, Status> {
+pub fn delete_article(_admin: Admin, id: u64) -> Result<Redirect, Status> {
     delete_article_by_id("articles.json", id)?;
 
     Ok(Redirect::to(uri!("/admin")))
 }
 
 #[get("/edit/<id>")]
-pub fn edit_article(id: u64) -> String {
-    "edited ".to_owned() + &id.to_string()
+pub fn edit_article_form(_admin: Admin, id: u64) -> Result<Template, Status> {
+    let article = get_article("articles.json", id)?.ok_or(Status::NotFound)?;
+
+    Ok(Template::render("edit", context! { article: article }))
+}
+
+#[post("/edit/<id>", data = "<article>")]
+pub fn edit_article(_admin: Admin, id: u64, article: Form<NewArticle>) -> Result<Redirect, Status> {
+    update_article("articles.json", id, article.into_inner())?;
+
+    Ok(Redirect::to(uri!(article(id))))
 }
 
 #[get("/login")]

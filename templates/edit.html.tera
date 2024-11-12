@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Article</title>
+  </head>
+
+  <style>
+    .input {
+      margin: 0 0 20px 0;
+      padding: 15px 10px;
+      border-radius: 20px;
+      border: none;
+      background-color: #d8bea221;
+    }
+
+    .input:focus {
+      outline: none;
+    }
+
+    .submit {
+      display: inline;
+      border: none;
+      border-radius: 20px;
+      background-color: #d8bea221;
+      padding: 5px;
+      font-size: 20px;
+      transition: background-color .2s;
+    }
+
+    .form {
+      display: flex;
+      flex-direction: column;
+      margin: auto;
+      width: 30%;
+    } 
+
+    .title {
+      font-size: 70px; 
+      font-weight: 600;
+      text-align: center;
+    }
+  </style>
+
+  <body>
+    <h1 class="title">Edit article "{{ article.name }}"</h1>
+    <form class="form" action="/admin/edit/{{ article.id }}" method="post">
+      <input name="name" class="input" placeholder="new name">
+      <input name="contents" class="input" placeholder="new contents">
+      <input class="submit" type="submit" value="update">
+    </form>
+  </body>
+</html>

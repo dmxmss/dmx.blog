@@ -64,6 +64,18 @@ pub fn delete_article_by_id<P: AsRef<Path>>(path: P, id: u64) -> Result<()> {
     Ok(())
 }
 
+pub fn update_article<P: AsRef<Path>>(path: P, id: u64, article: NewArticle) -> Result<()> {
+    delete_article_by_id(&path, id)?;
+
+    let mut articles = get_articles(&path)?;
+    let article = Article::new(id, article.name, article.contents);
+    articles.push(article);
+
+    write_to_db(&path, articles)?;
+
+    Ok(())
+}
+
 fn write_to_db<P: AsRef<Path>>(path: P, articles: Vec<Article>) -> Result<()> {
     let mut file = File::create(&path)?;
     
