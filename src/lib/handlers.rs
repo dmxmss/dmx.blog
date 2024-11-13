@@ -1,9 +1,6 @@
 use rocket_dyn_templates::{Template, context};
 use rocket::{
-    form::Form, 
-    fs::NamedFile, 
-    http::{Status, CookieJar}, 
-    response::Redirect,
+    fairing::Fairing, form::Form, fs::NamedFile, http::{CookieJar, Status}, response::Redirect
 };
 use crate::lib::{
     utils::{update_article, delete_article_by_id, get_article, create_article, update_tokens, get_articles, LoginData},
@@ -101,4 +98,35 @@ pub async fn unauthorized() -> Option<NamedFile> {
 #[catch(422)]
 pub fn wrong_password() -> Template {
     Template::render("login", context! { wrong_pass: true })
+}
+
+pub fn unauthorized_actions() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("Unauthorized", |rocket| async {
+        rocket.mount("/", routes![index, article, login_form, login])
+    })  
+}
+
+pub fn authorization() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("Authorization", |rocket| async {
+        rocket.mount("/", routes![admin, refresh])
+    })  
+}
+
+pub fn fail_auth() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("Fail authorization", |rocket| async {
+        rocket.mount("/", routes![not_admin, fail_refresh])
+    })  
+}
+
+pub fn authorized_actions() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("Fail authorization", |rocket| async {
+        rocket.mount("/admin", routes![article_form, new_article, delete_article, edit_article_form, edit_article])
+    })  
+}
+
+pub fn catchers() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("Catchers", |rocket| async {
+        rocket.register("/admin", catchers![unauthorized])
+              .register("/login", catchers![wrong_password])
+    })  
 }
