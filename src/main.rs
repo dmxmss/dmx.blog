@@ -3,7 +3,7 @@
 use rocket_dyn_templates::Template;
 
 mod lib;
-use lib::handlers::*;
+use lib::fairings::*;
 
 #[launch]
 fn rocket() -> _ {
@@ -11,7 +11,8 @@ fn rocket() -> _ {
         .attach(unauthorized_actions())
         .attach(authorized_actions())
         .attach(authorization())
-        .attach(fail_auth())
         .attach(catchers())
+        .attach(fail_auth())
+        .attach(init_db("articles.json"))
         .attach(Template::fairing())
 }

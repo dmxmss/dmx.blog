@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use rocket::form::FromForm;
 use chrono::Utc;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Article {
     pub id: u64,
     pub name: String,

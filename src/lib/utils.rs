@@ -27,10 +27,9 @@ pub struct LoginData {
 }
 
 pub fn get_articles<P: AsRef<Path>>(path: P) -> Result<Vec<Article>> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
+    let data = fs::read_to_string(path)?;
 
-    Ok(serde_json::from_reader(reader)?)
+    Ok(serde_json::from_str(data.as_str())?)
 }
 
 pub fn get_article<P: AsRef<Path>>(path: P, id: u64) -> Result<Option<Article>> {
@@ -128,7 +127,7 @@ pub fn get_secret() -> Result<String> {
     Ok(std::fs::read_to_string("server_secret")?)
 }
 
-pub fn generate_tokens() -> Result<(String, String)> {
+fn generate_tokens() -> Result<(String, String)> {
     let secret = get_secret()?;
 
     let access = AccessToken::encode(&secret)?;
@@ -137,7 +136,7 @@ pub fn generate_tokens() -> Result<(String, String)> {
     Ok((access, refresh))
 }
 
-pub fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies: &CookieJar) {
+fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies: &CookieJar) {
     let (access_cookie, refresh_cookie) = generate_token_cookies(access_token, refresh_token);
 
     cookies.add_private(access_cookie);

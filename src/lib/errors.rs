@@ -10,7 +10,7 @@ use jsonwebtoken::errors::ErrorKind;
 #[derive(Debug)]
 pub enum AppError {
     TokenValidationError(jsonwebtoken::errors::Error),
-    InternalServerError(Box<dyn Error>)
+    InternalServerError(Box<dyn Error + Send + Sync>)
 }
 
 impl error::Error for AppError {}
