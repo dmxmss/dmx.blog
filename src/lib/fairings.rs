@@ -2,7 +2,10 @@ use crate::lib::{
     handlers::*,
     db::Cursor
 };
-use std::path::Path;
+use std::{
+    path::Path,
+    sync::Mutex
+};
 
 pub fn unauthorized_actions() -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::on_ignite("Unauthorized", |rocket| async {
@@ -24,7 +27,7 @@ pub fn fail_auth() -> rocket::fairing::AdHoc {
 
 pub fn authorized_actions() -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::on_ignite("Authorized actions", |rocket| async {
-        rocket.mount("/admin", routes![article_form, new_article, delete_article, edit_article_form, edit_article])
+        rocket.mount("/admin", routes![article_form, new, delete, edit_article_form, edit])
     })  
 }
 
@@ -39,9 +42,9 @@ pub fn init_db<P: AsRef<Path> + Send + 'static>(path: P) -> rocket::fairing::AdH
     rocket::fairing::AdHoc::try_on_ignite("Init database", |rocket| async {
         match Cursor::new(path) {
             Ok(cursor) => {
-                Ok(rocket.manage(cursor))
+                Ok(rocket.manage(Mutex::new(cursor)))
             },
-            Err(e) =>  {
+            Err(_) =>  {
                 Err(rocket)
             }
         }

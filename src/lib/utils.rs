@@ -1,5 +1,5 @@
 use crate::lib::{
-    article::{Article, NewArticle},
+    article::Article,
     tokens::{Token, AccessToken, RefreshToken},
     result::Result
 };
@@ -9,7 +9,7 @@ use rocket::{
     http::{Status, CookieJar}
 };
 use std::{
-    fs::{self, File}, io::{BufReader, Write}, path::Path
+    fs, path::Path
 };
 use cookie::Cookie;
 use time::OffsetDateTime;
@@ -30,57 +30,6 @@ pub fn get_articles<P: AsRef<Path>>(path: P) -> Result<Vec<Article>> {
     let data = fs::read_to_string(path)?;
 
     Ok(serde_json::from_str(data.as_str())?)
-}
-
-pub fn get_article<P: AsRef<Path>>(path: P, id: u64) -> Result<Option<Article>> {
-    let articles = get_articles(path)?;
-
-    Ok(articles.into_iter().find(|article| article.id == id))
-}
-
-pub fn create_article<P: AsRef<Path>>(path: P, article: NewArticle) -> Result<u64> {
-    let mut articles = get_articles(&path)?;
-
-    let id = articles.iter().map(|a| a.id).max().unwrap() + 1;
-    let article = Article::new(id, article.name, article.contents);
-    articles.push(article);
-
-    write_to_db(&path, articles)?;
-
-    Ok(id)
-}
-
-pub fn delete_article_by_id<P: AsRef<Path>>(path: P, id: u64) -> Result<()> {
-    let mut articles = get_articles(&path)?;
-
-    if let Some(article) = get_article(&path, id)? {
-        articles.retain(|a| a.id != article.id);
-    }
-
-    
-    write_to_db(&path, articles)?;
-
-    Ok(())
-}
-
-pub fn update_article<P: AsRef<Path>>(path: P, id: u64, article: NewArticle) -> Result<()> {
-    delete_article_by_id(&path, id)?;
-
-    let mut articles = get_articles(&path)?;
-    let article = Article::new(id, article.name, article.contents);
-    articles.push(article);
-
-    write_to_db(&path, articles)?;
-
-    Ok(())
-}
-
-fn write_to_db<P: AsRef<Path>>(path: P, articles: Vec<Article>) -> Result<()> {
-    let mut file = File::create(&path)?;
-    
-    file.write_all(serde_json::to_string(&articles).unwrap().as_bytes()).unwrap();
-
-    Ok(())
 }
 
 fn check_pass<'v>(input_pass: &str) -> form::Result<'v, ()> {

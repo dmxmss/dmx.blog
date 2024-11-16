@@ -6,6 +6,10 @@
   </head>
 
   <style>
+    a {
+      text-decoration: none;
+    }
+
     .date {
       opacity: 0.2;
     }    

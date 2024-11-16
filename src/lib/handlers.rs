@@ -1,24 +1,26 @@
+use std::sync::Mutex;
 use rocket_dyn_templates::{Template, context};
 use rocket::{
-    form::Form, fs::NamedFile, http::{CookieJar, Status}, response::Redirect,
+    form::Form, fs::NamedFile, http::{CookieJar, Status}, response::Redirect, State,
 };
 use crate::lib::{
-    utils::{update_article, delete_article_by_id, get_article, create_article, update_tokens, get_articles, LoginData},
+    utils::{update_tokens, LoginData},
     admin::Admin,
     refresh::Refresh,
     article::NewArticle,
+    db::Cursor
 };
 
 #[get("/")]
-pub fn index() -> Result<Template, Status> {
-    let articles = get_articles("articles.json")?;
+pub fn index(db: &State<Mutex<Cursor>>) -> Result<Template, Status> {
+    let articles = &db.lock().unwrap().articles;
 
     Ok(Template::render("index", context! { articles: articles }))
 }
 
 #[get("/article/<id>")] 
-pub fn article(id: u64) -> Result<Template, Status> {
-    let article = get_article("articles.json", id)?.ok_or(Status::NotFound)?;
+pub fn article(id: u64, db: &State<Mutex<Cursor>>) -> Result<Template, Status> {
+    let article = db.lock().unwrap().get_article(id).ok_or(Status::NotFound)?;
     
     Ok(Template::render("article", context! {article: article}))
 }
@@ -29,29 +31,29 @@ pub async fn article_form(_admin: Admin) -> Option<NamedFile> {
 }
 
 #[post("/new", data = "<article>")]
-pub fn new_article(_admin: Admin, article: Form<NewArticle>) -> Result<Redirect, Status> {
-    let id = create_article("articles.json", article.into_inner())?;
+pub fn new(_admin: Admin, article: Form<NewArticle>, db: &State<Mutex<Cursor>>) -> Result<Redirect, Status> {
+    let id = db.lock().unwrap().create_article(article.into_inner())?;
 
     Ok(Redirect::to(uri!(article(id))))
 }
 
 #[get("/delete/<id>")]
-pub fn delete_article(_admin: Admin, id: u64) -> Result<Redirect, Status> {
-    delete_article_by_id("articles.json", id)?;
+pub fn delete(_admin: Admin, id: u64, db: &State<Mutex<Cursor>>) -> Result<Redirect, Status> {
+    db.lock().unwrap().delete_article(id)?;
 
     Ok(Redirect::to(uri!("/admin")))
 }
 
 #[get("/edit/<id>")]
-pub fn edit_article_form(_admin: Admin, id: u64) -> Result<Template, Status> {
-    let article = get_article("articles.json", id)?.ok_or(Status::NotFound)?;
+pub fn edit_article_form(_admin: Admin, id: u64, db: &State<Mutex<Cursor>>) -> Result<Template, Status> {
+    let article = db.lock().unwrap().get_article(id).ok_or(Status::NotFound)?;
 
     Ok(Template::render("edit", context! { article: article }))
 }
 
 #[post("/edit/<id>", data = "<article>")]
-pub fn edit_article(_admin: Admin, id: u64, article: Form<NewArticle>) -> Result<Redirect, Status> {
-    update_article("articles.json", id, article.into_inner())?;
+pub fn edit(_admin: Admin, id: u64, article: Form<NewArticle>, db: &State<Mutex<Cursor>>) -> Result<Redirect, Status> {
+    db.lock().unwrap().update_article(id, article.into_inner())?;
 
     Ok(Redirect::to(uri!(article(id))))
 }
@@ -69,8 +71,8 @@ pub async fn login(cookies: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Re
 }
 
 #[get("/admin")]
-pub async fn admin(_admin: Admin) -> Result<Template, Status> {
-    let articles = get_articles("articles.json")?;
+pub async fn admin(_admin: Admin, db: &State<Mutex<Cursor>>) -> Result<Template, Status> {
+    let articles = &db.lock().unwrap().articles;
 
     Ok(Template::render("dashboard", context! { articles: articles }))
 }

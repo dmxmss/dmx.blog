@@ -1,20 +1,18 @@
 use std::{
     fs::File,
-    io::{BufReader, Write},
+    io::Write,
     path::Path
 };
 use crate::lib::{
-    errors::AppError,
+    result::Result,
     article::{Article, NewArticle},
     utils::get_articles
 }; 
 
 pub struct Cursor {
     file: File,
-    articles: Vec<Article>
+    pub articles: Vec<Article>
 }
-
-type Result<T> = std::result::Result<T, AppError>;
 
 impl Cursor {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Cursor> {
@@ -46,7 +44,7 @@ impl Cursor {
         Ok(())
     }
 
-    pub fn delete_article_by_id(&mut self, id: u64) -> Result<()> {
+    pub fn delete_article(&mut self, id: u64) -> Result<()> {
         if let Some(article) = self.get_article(id) {
             self.articles.retain(|a| a.id != article.id);
         }
@@ -57,7 +55,7 @@ impl Cursor {
     }
 
     pub fn update_article(&mut self, id: u64, article: NewArticle) -> Result<()> {
-        self.delete_article_by_id(id)?;
+        self.delete_article(id)?;
 
         let article = Article::new(id, article.name, article.contents);
         self.articles.push(article);
