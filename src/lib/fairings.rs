@@ -44,7 +44,8 @@ pub fn init_db<P: AsRef<Path> + Send + 'static>(path: P) -> rocket::fairing::AdH
             Ok(cursor) => {
                 Ok(rocket.manage(Mutex::new(cursor)))
             },
-            Err(_) =>  {
+            Err(e) =>  {
+                println!("{e}");
                 Err(rocket)
             }
         }

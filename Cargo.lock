@@ -430,6 +430,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "cookie",
+ "figment",
  "jsonwebtoken",
  "rocket",
  "rocket_dyn_templates",
@@ -484,6 +485,7 @@ dependencies = [
  "atomic 0.6.0",
  "pear",
  "serde",
+ "serde_json",
  "toml",
  "uncased",
  "version_check",

@@ -5,8 +5,9 @@ use rocket::{
 };
 use crate::lib::{
     errors::AppError,
-    utils::{update_tokens, get_secret},
-    tokens::{Token, RefreshToken}
+    utils::update_tokens,
+    tokens::{Token, RefreshToken},
+    config::ServerSecret
 };
 
 pub struct Refresh;
@@ -17,16 +18,13 @@ impl<'r> FromRequest<'r> for Refresh {
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let cookies = req.cookies();
-        let secret = match get_secret() {
-            Ok(s) => s,
-            Err(e) => return e.into()
-        };
+        let secret = req.guard::<ServerSecret>().await.unwrap().0;
 
         match cookies.get_private(RefreshToken::COOKIE_NAME) {
             Some(cookie) => {
-                match RefreshToken::validate(cookie.value(), &secret) {
+                match RefreshToken::validate(cookie.value(), secret) {
                     Ok(()) => {
-                        match update_tokens(cookies) {
+                        match update_tokens(cookies, secret) {
                             Ok(()) => Outcome::Success(Refresh),
                             Err(_) => Outcome::Forward(Status::InternalServerError)
                         }

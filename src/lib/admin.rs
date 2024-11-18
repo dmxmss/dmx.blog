@@ -1,14 +1,11 @@
 use crate::lib::{
     tokens::{Token, AccessToken},
     errors::AppError,
-    utils::get_secret
+    config::ServerSecret
 };
 use rocket::{
-    request::{Outcome, FromRequest},
-    Request, 
-    http::Status
+    http::Status, request::{FromRequest, Outcome}, Request
 };
-
 
 pub struct Admin;
 
@@ -18,10 +15,7 @@ impl<'r> FromRequest<'r> for Admin {
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let cookies = req.cookies();
-        let secret = match get_secret() {
-            Ok(s) => s,
-            Err(e) => return e.into()
-        };
+        let secret = req.guard::<ServerSecret>().await.unwrap().0;
 
         match cookies.get_private(AccessToken::COOKIE_NAME) {
             Some(cookie) => {

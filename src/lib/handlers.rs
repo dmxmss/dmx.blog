@@ -8,7 +8,8 @@ use crate::lib::{
     admin::Admin,
     refresh::Refresh,
     article::NewArticle,
-    db::Cursor
+    db::Cursor,
+    config::{AdminPass, ServerSecret}
 };
 
 #[get("/")]
@@ -63,9 +64,13 @@ pub async fn login_form() -> Template {
     Template::render("login", context! { wrong_pass: false })
 }
 
-#[post("/login", data = "<_data>")]
-pub async fn login(cookies: &CookieJar<'_>, _data: Form<LoginData>) -> Result<Redirect, Status> {
-    update_tokens(cookies)?;
+#[post("/login", data = "<data>")]
+pub async fn login(cookies: &CookieJar<'_>, data: Form<LoginData>, admin_pass: AdminPass<'_>, secret: ServerSecret<'_>) -> Result<Redirect, Status> {
+    if *admin_pass.0 != data.into_inner().password {
+        return Err(Status::Unauthorized);
+    }
+
+    update_tokens(cookies, secret.0)?;
 
     Ok(Redirect::to(uri!("/admin")))
 }
@@ -97,7 +102,7 @@ pub async fn unauthorized() -> Option<NamedFile> {
     NamedFile::open("static/unauthorized.html").await.ok() 
 }
 
-#[catch(422)]
+#[catch(401)]
 pub fn wrong_password() -> Template {
     Template::render("login", context! { wrong_pass: true })
 }

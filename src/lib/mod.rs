@@ -8,3 +8,4 @@ pub mod refresh;
 pub mod result;
 pub mod db;
 pub mod fairings;
+pub mod config;

@@ -1,12 +1,13 @@
 use crate::lib::{
     article::Article,
     tokens::{Token, AccessToken, RefreshToken},
-    result::Result
+    result::Result,
+    errors::AppError
 };
 use serde::{Serialize, Deserialize};
 use rocket::{
     form,
-    http::{Status, CookieJar}
+    http::{CookieJar, Status}, request::{FromRequest, Outcome}
 };
 use std::{
     fs, path::Path
@@ -72,15 +73,9 @@ fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -
     (refresh_cookie, access_cookie)
 }
 
-pub fn get_secret() -> Result<String> {
-    Ok(std::fs::read_to_string("server_secret")?)
-}
-
-fn generate_tokens() -> Result<(String, String)> {
-    let secret = get_secret()?;
-
-    let access = AccessToken::encode(&secret)?;
-    let refresh = RefreshToken::encode(&secret)?;
+fn generate_tokens(secret: &String) -> Result<(String, String)> {
+    let access = AccessToken::encode(secret)?;
+    let refresh = RefreshToken::encode(secret)?;
 
     Ok((access, refresh))
 }
@@ -92,8 +87,8 @@ fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies:
     cookies.add_private(refresh_cookie);
 }
 
-pub fn update_tokens(cookies: &CookieJar) -> Result<()> {
-    let (access_token, refresh_token) = generate_tokens()?;
+pub fn update_tokens(cookies: &CookieJar, secret: &String) -> Result<()> {
+    let (access_token, refresh_token) = generate_tokens(secret)?;
 
     write_tokens_to_cookies(access_token, refresh_token, cookies);
 

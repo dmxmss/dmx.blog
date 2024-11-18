@@ -11,6 +11,7 @@ rocket = { version = "0.5.1", features = [ "secrets" ] }
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 time = "0.3.36"
+figment = { version = "0.10", features = ["toml", "json"] }
 
 [dependencies.rocket_dyn_templates]
 version = "0.2.0"
