@@ -1,13 +1,12 @@
 use crate::lib::{
     article::Article,
     tokens::{Token, AccessToken, RefreshToken},
-    result::Result,
-    errors::AppError
+    result::Result
 };
 use serde::{Serialize, Deserialize};
 use rocket::{
     form,
-    http::{CookieJar, Status}, request::{FromRequest, Outcome}
+    http::{CookieJar, Status} 
 };
 use std::{
     fs, path::Path

@@ -8,7 +8,7 @@ use std::{
 };
 
 pub fn unauthorized_actions() -> rocket::fairing::AdHoc {
-    rocket::fairing::AdHoc::on_ignite("Unauthorized", |rocket| async {
+    rocket::fairing::AdHoc::on_ignite("Unauthorized actions", |rocket| async {
         rocket.mount("/", routes![index, article, login_form, login])
     })  
 }
@@ -38,14 +38,13 @@ pub fn catchers() -> rocket::fairing::AdHoc {
     })  
 }
 
-pub fn init_db<P: AsRef<Path> + Send + 'static>(path: P) -> rocket::fairing::AdHoc {
+pub fn init_db<P: AsRef<Path> + Send + Sync + 'static>(path: P) -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::try_on_ignite("Init database", |rocket| async {
         match Cursor::new(path) {
             Ok(cursor) => {
                 Ok(rocket.manage(Mutex::new(cursor)))
             },
-            Err(e) =>  {
-                println!("{e}");
+            Err(_) =>  {
                 Err(rocket)
             }
         }

@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::Write,
-    path::Path
+    path::{Path, PathBuf}
 };
 use crate::lib::{
     result::Result,
@@ -10,18 +10,18 @@ use crate::lib::{
 }; 
 
 pub struct Cursor {
-    file: File,
-    pub articles: Vec<Article>
+    pub articles: Vec<Article>,
+    path: PathBuf
 }
 
 impl Cursor {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Cursor> {
+    pub fn new<P: AsRef<Path> + 'static>(path: P) -> Result<Cursor> {
         let articles = get_articles(&path)?;
 
         let mut file = File::create(&path)?;
-        file.write_all(serde_json::to_string(&articles)?.as_bytes())?;
+        file.write_all(serde_json::to_string(&articles)?.as_ref())?;
 
-        Ok(Cursor { file, articles })
+        Ok(Cursor { articles, path: path.as_ref().to_path_buf()})
     }
 
     pub fn get_article(&self, id: u64) -> Option<Article> {
@@ -39,7 +39,8 @@ impl Cursor {
     }
 
     fn sync(&mut self) -> Result<()> {
-        self.file.write_all(serde_json::to_string(&self.articles)?.as_bytes())?;
+        let mut file = File::create(&*self.path)?;
+        file.write_all(serde_json::to_string(&self.articles)?.as_ref())?;
 
         Ok(())
     }
