@@ -3,4 +3,6 @@ notes
 server_secret
 admin
 Rocket.toml
+App.toml
+Cargo.lock
 articles.json
