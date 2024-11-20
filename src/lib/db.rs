@@ -35,7 +35,7 @@ impl Cursor {
     }
 
     pub fn create_article(&mut self, article: NewArticle) -> Result<u64> {
-        let id = self.articles.iter().map(|a| a.id).max().unwrap() + 1;
+        let id = self.articles.iter().map(|a| a.id).max().unwrap_or(0) + 1;
         let article = Article::new(id, article.name, article.contents);
         self.articles.push(article);
 
