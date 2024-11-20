@@ -4,10 +4,7 @@ use crate::lib::{
     result::Result
 };
 use serde::{Serialize, Deserialize};
-use rocket::{
-    form,
-    http::{CookieJar, Status} 
-};
+use rocket::http::CookieJar;
 use std::{
     fs, path::Path
 };
@@ -22,7 +19,6 @@ pub struct Claims {
 #[derive(FromForm)]
 #[allow(dead_code)]
 pub struct LoginData {
-    #[field(validate = check_pass())]
     pub password: String
 }
 
@@ -30,19 +26,6 @@ pub fn get_articles<P: AsRef<Path>>(path: P) -> Result<Vec<Article>> {
     let data = fs::read_to_string(path)?;
 
     Ok(serde_json::from_str(data.as_str())?)
-}
-
-fn check_pass<'v>(input_pass: &str) -> form::Result<'v, ()> {
-    let pass = match fs::read_to_string("admin") {
-        Ok(p) => p,
-        Err(e) => return Err(form::error::ErrorKind::Custom(Status::InternalServerError, Box::new(e)).into())
-    };
-    
-    if input_pass.trim() != pass.trim() {
-        Err(form::Error::validation("invalid admin password"))?;
-    }
-
-    Ok(())
 }
 
 fn generate_expires_timestamps() -> (OffsetDateTime, OffsetDateTime) {
@@ -72,7 +55,7 @@ fn generate_token_cookies<'c>(encoded_access: String, encoded_refresh: String) -
     (refresh_cookie, access_cookie)
 }
 
-fn generate_tokens(secret: &String) -> Result<(String, String)> {
+fn generate_tokens(secret: &str) -> Result<(String, String)> {
     let access = AccessToken::encode(secret)?;
     let refresh = RefreshToken::encode(secret)?;
 
@@ -86,7 +69,7 @@ fn write_tokens_to_cookies(access_token: String, refresh_token: String, cookies:
     cookies.add_private(refresh_cookie);
 }
 
-pub fn update_tokens(cookies: &CookieJar, secret: &String) -> Result<()> {
+pub fn update_tokens(cookies: &CookieJar, secret: &str) -> Result<()> {
     let (access_token, refresh_token) = generate_tokens(secret)?;
 
     write_tokens_to_cookies(access_token, refresh_token, cookies);
