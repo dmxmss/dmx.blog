@@ -16,7 +16,13 @@ pub struct Cursor {
 
 impl Cursor {
     pub fn new<P: AsRef<Path> + 'static>(path: P) -> Result<Cursor> {
-        let articles = get_articles(&path)?;
+        let articles: Vec<Article>;
+
+        if path.as_ref().exists() {
+            articles = get_articles(&path)?;
+        } else {
+            articles = vec![];
+        }
 
         let mut file = File::create(&path)?;
         file.write_all(serde_json::to_string(&articles)?.as_ref())?;
